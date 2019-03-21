@@ -21,7 +21,7 @@ class HSBK:
         self.kelvin = color['kelvin']
 
     @staticmethod
-    def encode_color(color):
+    def encode(color):
         color_str = []
         if color.hue is not None:
             color_str.append(f"hue:{color.hue}")
@@ -39,7 +39,7 @@ def turn_on(color=None, brightness=None, duration=None):
     payload = {"power": "on"}
 
     if color:
-        payload = HSBK.encode_color(color)
+        payload['color'] = HSBK.encode(color)
     if brightness is not None:
         payload['brightness'] = brightness
     if color is None and brightness is None:
@@ -77,21 +77,18 @@ def blink_power(blinks=1):
 def blink_color(blinks=1, duration=0.0, color=None):
     status = get_status()
 
-    if color is not None:
-        color = HSBK(color)
-
     base_payload = {
         "power": status['power'],
         "duration": duration,
-        "color": HSBK.encode_color(HSBK(status['color'])),
+        "color": HSBK.encode(HSBK(status['color'])),
     }
 
     blink_payload = {
         "power": "on",
         "duration": duration,
     }
-    if color:
-        blink_payload['color'] = HSBK.encode_color(color)
+    if color is not None:
+        blink_payload['color'] = HSBK.encode(HSBK(color))
 
     for _ in range(blinks):
         set_state(blink_payload)
