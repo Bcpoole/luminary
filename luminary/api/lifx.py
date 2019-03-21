@@ -63,11 +63,7 @@ def turn_off(duration=None):
 
 
 def toggle_power():
-    status = get_status()
-    if status['power'] == 'off':
-        turn_off()
-    else:
-        turn_on()
+    requests.post(f"https://api.lifx.com/v1/lights/id:{id}/toggle", headers=headers)
 
 
 def blink_power(blinks=1):
