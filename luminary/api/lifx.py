@@ -42,6 +42,8 @@ def turn_on(color=None, brightness=None, duration=None):
         payload = HSBK.encode_color(color)
     if brightness is not None:
         payload['brightness'] = brightness
+    if color is None and brightness is None:
+        payload['fast'] = True
     if duration is not None:
         payload['duration'] = duration
 
@@ -51,6 +53,7 @@ def turn_on(color=None, brightness=None, duration=None):
 def turn_off(duration=None):
     payload = {
         "power": "off",
+        "fast": True,
     }
 
     if duration:
@@ -103,7 +106,9 @@ def blink_color(blinks=1, duration=0.0, color=None):
 
 def set_state(payload):
     response = requests.put(f"https://api.lifx.com/v1/lights/id:{id}/state", headers=headers, data=payload)
-    if response.ok:
+    if response.status_code == 202:
+        return None
+    elif response.ok:
         resp = json.loads(response.content)
         if type(resp) is list:
             return resp[0]
