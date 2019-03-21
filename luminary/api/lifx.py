@@ -35,8 +35,11 @@ class HSBK:
         return ' '.join(color_str)
 
 
-def turn_on(color=None, brightness=None, duration=None):
-    payload = {"power": "on"}
+def turn_on(color=None, brightness=None, duration=1.0):
+    payload = {
+        "power": "on",
+        "duration": duration
+    }
 
     if color:
         payload = HSBK.encode_color(color)
@@ -44,20 +47,16 @@ def turn_on(color=None, brightness=None, duration=None):
         payload['brightness'] = brightness
     if color is None and brightness is None:
         payload['fast'] = True
-    if duration is not None:
-        payload['duration'] = duration
 
     set_state(payload)
 
 
-def turn_off(duration=None):
+def turn_off(duration=1.0):
     payload = {
         "power": "off",
+        "duration": duration,
         "fast": True,
     }
-
-    if duration:
-        payload['duration'] = duration
 
     set_state(payload)
 
