@@ -157,10 +157,6 @@ def effects_off(power_off=False):
     post_effect("off", payload)
 
 
-def cycle():
-    raise NotImplementedError
-
-
 def post_effect(effect, payload):
     """
     Formats payload and POST to given effect api.
@@ -171,7 +167,7 @@ def post_effect(effect, payload):
     response = requests.post(f"https://api.lifx.com/v1/lights/id:{id}/effects/{effect}",
                              headers=headers, data=json.dumps(payload))
     if not response.ok:
-        raise requests.exceptions.HTTPError(response.status_code, response.reason)
+        raise requests.exceptions.HTTPError(response.status_code, response.reason, response.content)
 
 
 headers = {

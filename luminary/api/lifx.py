@@ -107,9 +107,30 @@ def blink_color(blinks=1, duration=0.0, color=None):
 
 
 def set_state(payload):
-    response = requests.put(f"https://api.lifx.com/v1/lights/id:{id}/state", headers=headers, data=payload)
+    response = requests.put(f"https://api.lifx.com/v1/lights/id:{id}/state", headers=headers, data=json.dumps(payload))
     if not response.ok:
-        raise requests.exceptions.HTTPError(response.status_code)
+        raise requests.exceptions.HTTPError(response.status_code, response.reason, response.content)
+
+
+def cycle(states, defaults=None, direction='forward'):
+    """
+    https://api.developer.lifx.com/docs/cycle
+    Make the light(s) cycle to the next or previous state in a list of states.
+
+    :param states: Array of state hashes as per Set State. Must have 2 to 10 entries.
+    :param defaults: Default values to use when not specified in each states[] object.
+    :param direction: Direction in which to cycle through the list. Can be forward or backward.
+    """
+    payload = {
+        "states": states,
+        "direction": direction,
+    }
+    if defaults is not None:
+        payload['defaults'] = defaults
+
+    response = requests.post(f"https://api.lifx.com/v1/lights/id:{id}/cycle", headers=headers, data=json.dumps(payload))
+    if not response.ok:
+        raise requests.exceptions.HTTPError(response.status_code, response.reason, response.content)
 
 
 def get_status():
@@ -117,7 +138,7 @@ def get_status():
     if response.ok:
         return json.loads(response.content)[0]
     else:
-        raise requests.exceptions.HTTPError(response.status_code, response.reason)
+        raise requests.exceptions.HTTPError(response.status_code, response.reason, response.content)
 
 
 config = configparser.ConfigParser()
