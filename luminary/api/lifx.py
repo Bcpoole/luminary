@@ -6,31 +6,37 @@ import time
 
 class HSBK:
     def __init__(self, color, brightness=None):
+        """
+        Hue Saturation Brightness Kelvin
+
+        :param color: Either color name string of dict of HSBK values.
+        :param brightness: Color brightness. Will set to 1.0 if None and color has no brightness value.
+        """
         if type(color) is str:
             response = requests.get(f"https://api.lifx.com/v1/color?string={color}", headers=headers)
             color = json.loads(response.content)
 
-        self.hue = color['hue']
-        self.saturation = color['saturation']
+        self.hue = color.get('hue')
+        self.saturation = color.get('saturation')
         if brightness is not None:
             self.brightness = color['brightness']
-        elif brightness in color:
-            self.brightness = color['brightness']
         else:
-            self.brightness = 1.0
-        self.kelvin = color['kelvin']
+            self.brightness = color.get('brightness', 1.0)
+        self.kelvin = color.get('kelvin')
 
-    @staticmethod
-    def encode(color):
-        color_str = []
-        if color.hue is not None:
-            color_str.append(f"hue:{color.hue}")
-        if color.saturation is not None:
-            color_str.append(f"saturation:{color.saturation}")
-        if color.brightness is not None:
-            color_str.append(f"brightness:{color.brightness}")
-        if color.kelvin is not None:
-            color_str.append(f"kelvin:{color.kelvin}")
+    def encode(self):
+        """
+        Gets LIFX API compatible string representation of color.
+
+        :return: LIFX API color data string.
+        """
+        color_str = [f"brightness:{self.brightness}"]
+        if self.hue is not None:
+            color_str.append(f"hue:{self.hue}")
+        if self.saturation is not None:
+            color_str.append(f"saturation:{self.saturation}")
+        if self.kelvin is not None:
+            color_str.append(f"kelvin:{self.kelvin}")
 
         return ' '.join(color_str)
 
@@ -39,7 +45,7 @@ def turn_on(color=None, brightness=None, duration=None):
     payload = {"power": "on"}
 
     if color:
-        payload['color'] = HSBK.encode(color)
+        payload['color'] = HSBK(color).encode()
     if brightness is not None:
         payload['brightness'] = brightness
     if color is None and brightness is None:
@@ -99,15 +105,7 @@ def blink_color(blinks=1, duration=0.0, color=None):
 
 def set_state(payload):
     response = requests.put(f"https://api.lifx.com/v1/lights/id:{id}/state", headers=headers, data=payload)
-    if response.status_code == 202:
-        return None
-    elif response.ok:
-        resp = json.loads(response.content)
-        if type(resp) is list:
-            return resp[0]
-        else:
-            return resp
-    else:
+    if not response.ok:
         raise requests.exceptions.HTTPError(response.status_code)
 
 
