@@ -1,36 +1,45 @@
 import configparser
-import requests
 import json
 import time
+
+import requests
 
 
 class HSBK:
     def __init__(self, color, brightness=None):
+        """
+        Hue Saturation Brightness Kelvin
+
+        :param color: Either color name string of dict of HSBK values.
+        :param brightness: Color brightness. Will set to 1.0 if None and color has no brightness value.
+        """
         if type(color) is str:
             response = requests.get(f"https://api.lifx.com/v1/color?string={color}", headers=headers)
             color = json.loads(response.content)
 
-        self.hue = color['hue']
-        self.saturation = color['saturation']
+        self.hue = color.get('hue')
+        self.saturation = color.get('saturation')
         if brightness is not None:
             self.brightness = color['brightness']
-        elif brightness in color:
-            self.brightness = color['brightness']
         else:
-            self.brightness = 1.0
-        self.kelvin = color['kelvin']
+            self.brightness = color.get('brightness', 1.0)
+        self.kelvin = color.get('kelvin')
 
-    @staticmethod
-    def encode_color(color):
+    def encode(self):
+        """
+        Gets LIFX API compatible string representation of color.
+
+        :return: LIFX API color data string.
+        """
         color_str = []
-        if color.hue is not None:
-            color_str.append(f"hue:{color.hue}")
-        if color.saturation is not None:
-            color_str.append(f"saturation:{color.saturation}")
-        if color.brightness is not None:
-            color_str.append(f"brightness:{color.brightness}")
-        if color.kelvin is not None:
-            color_str.append(f"kelvin:{color.kelvin}")
+        if self.brightness is not None:
+            color_str.append(f"brightness:{self.brightness}")
+        if self.hue is not None:
+            color_str.append(f"hue:{self.hue}")
+        if self.saturation is not None:
+            color_str.append(f"saturation:{self.saturation}")
+        if self.kelvin is not None:
+            color_str.append(f"kelvin:{self.kelvin}")
 
         return ' '.join(color_str)
 
@@ -42,7 +51,7 @@ def turn_on(color=None, brightness=None, duration=1.0):
     }
 
     if color:
-        payload = HSBK.encode_color(color)
+        payload['color'] = HSBK(color).encode()
     if brightness is not None:
         payload['brightness'] = brightness
     if color is None and brightness is None:
@@ -76,21 +85,18 @@ def blink_power(blinks=1):
 def blink_color(blinks=1, duration=0.0, color=None):
     status = get_status()
 
-    if color is not None:
-        color = HSBK(color)
-
     base_payload = {
         "power": status['power'],
         "duration": duration,
-        "color": HSBK.encode_color(HSBK(status['color'])),
+        "color": HSBK.encode(HSBK(status['color'])),
     }
 
     blink_payload = {
         "power": "on",
         "duration": duration,
     }
-    if color:
-        blink_payload['color'] = HSBK.encode_color(color)
+    if color is not None:
+        blink_payload['color'] = HSBK.encode(HSBK(color))
 
     for _ in range(blinks):
         set_state(blink_payload)
@@ -100,17 +106,30 @@ def blink_color(blinks=1, duration=0.0, color=None):
 
 
 def set_state(payload):
-    response = requests.put(f"https://api.lifx.com/v1/lights/id:{id}/state", headers=headers, data=payload)
-    if response.status_code == 202:
-        return None
-    elif response.ok:
-        resp = json.loads(response.content)
-        if type(resp) is list:
-            return resp[0]
-        else:
-            return resp
-    else:
-        raise requests.exceptions.HTTPError(response.status_code)
+    response = requests.put(f"https://api.lifx.com/v1/lights/id:{id}/state", headers=headers, data=json.dumps(payload))
+    if not response.ok:
+        raise requests.exceptions.HTTPError(response.status_code, response.reason, response.content)
+
+
+def cycle(states, defaults=None, direction='forward'):
+    """
+    https://api.developer.lifx.com/docs/cycle
+    Make the light(s) cycle to the next or previous state in a list of states.
+
+    :param states: Array of state hashes as per Set State. Must have 2 to 10 entries.
+    :param defaults: Default values to use when not specified in each states[] object.
+    :param direction: Direction in which to cycle through the list. Can be forward or backward.
+    """
+    payload = {
+        "states": states,
+        "direction": direction,
+    }
+    if defaults is not None:
+        payload['defaults'] = defaults
+
+    response = requests.post(f"https://api.lifx.com/v1/lights/id:{id}/cycle", headers=headers, data=json.dumps(payload))
+    if not response.ok:
+        raise requests.exceptions.HTTPError(response.status_code, response.reason, response.content)
 
 
 def get_status():
@@ -118,7 +137,7 @@ def get_status():
     if response.ok:
         return json.loads(response.content)[0]
     else:
-        raise requests.exceptions.HTTPError(response.status_code)
+        raise requests.exceptions.HTTPError(response.status_code, response.reason, response.content)
 
 
 config = configparser.ConfigParser()
