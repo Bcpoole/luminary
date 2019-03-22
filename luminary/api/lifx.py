@@ -1,7 +1,8 @@
 import configparser
-import requests
 import json
 import time
+
+import requests
 
 
 class HSBK:
@@ -30,7 +31,9 @@ class HSBK:
 
         :return: LIFX API color data string.
         """
-        color_str = [f"brightness:{self.brightness}"]
+        color_str = []
+        if self.brightness is not None:
+            color_str.append(f"brightness:{self.brightness}")
         if self.hue is not None:
             color_str.append(f"hue:{self.hue}")
         if self.saturation is not None:
@@ -114,7 +117,7 @@ def get_status():
     if response.ok:
         return json.loads(response.content)[0]
     else:
-        raise requests.exceptions.HTTPError(response.status_code)
+        raise requests.exceptions.HTTPError(response.status_code, response.reason)
 
 
 config = configparser.ConfigParser()
