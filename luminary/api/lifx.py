@@ -45,6 +45,13 @@ class HSBK:
 
 
 def turn_on(color=None, brightness=None, duration=1.0):
+    """
+    Turns on the light. Sets to given color and brightness if given; Uses fast query if both are not.
+
+    :param color: Color to set light to.
+    :param brightness: The brightness level from 0.0 to 1.0. Overrides any brightness set in color (if any).
+    :param duration: How long in seconds you want the power action to take. Range: 0.0 – 3155760000.0 (100 years).
+    """
     payload = {
         "power": "on",
         "duration": duration
@@ -61,6 +68,11 @@ def turn_on(color=None, brightness=None, duration=1.0):
 
 
 def turn_off(duration=1.0):
+    """
+    Turns off light with the fast query.
+
+    :param duration: How long in seconds you want the power action to take. Range: 0.0 – 3155760000.0 (100 years).
+    """
     payload = {
         "power": "off",
         "duration": duration,
@@ -71,41 +83,37 @@ def turn_off(duration=1.0):
 
 
 def toggle_power():
+    """
+    https://api.developer.lifx.com/docs/toggle-power
+    Turn off lights if any of them are on, or turn them on if they are all off.
+    All lights matched by the selector will share the same power state after this action.
+    Physically powered off lights are ignored.
+    """
     requests.post(f"https://api.lifx.com/v1/lights/id:{id}/toggle", headers=headers)
 
 
-def blink_power(blinks=1):
-    for _ in range(blinks):
+def blink_power(cycles=1, period=.25, persist=False):
+    """
+    Blink the power state.
+    :param cycles: The number of times to repeat the effect.
+    :param period: The time in seconds for one cycles of the effect.
+    :param persist: If false set the light back to its previous value when effect ends,
+                    if true leave the last effect color.
+    """
+    for i in range(cycles):
         toggle_power()
-        time.sleep(.25)
-        toggle_power()
-        time.sleep(.25)
-
-
-def blink_color(blinks=1, duration=0.0, color=None):
-    status = get_status()
-
-    base_payload = {
-        "power": status['power'],
-        "duration": duration,
-        "color": HSBK.encode(HSBK(status['color'])),
-    }
-
-    blink_payload = {
-        "power": "on",
-        "duration": duration,
-    }
-    if color is not None:
-        blink_payload['color'] = HSBK.encode(HSBK(color))
-
-    for _ in range(blinks):
-        set_state(blink_payload)
-        time.sleep(.25)
-        set_state(base_payload)
-        time.sleep(.25)
+        time.sleep(period)
+        if not (i == cycles - 1 and persist):
+            toggle_power()
+            time.sleep(period)
 
 
 def set_state(payload):
+    """
+    https://api.developer.lifx.com/docs/set-state
+
+    :param payload: Dict of state properties.
+    """
     response = requests.put(f"https://api.lifx.com/v1/lights/id:{id}/state", headers=headers, data=json.dumps(payload))
     if not response.ok:
         raise requests.exceptions.HTTPError(response.status_code, response.reason, response.content)
@@ -133,6 +141,12 @@ def cycle(states, defaults=None, direction='forward'):
 
 
 def get_status():
+    """
+    https://api.developer.lifx.com/docs/list-lights
+    Gets the status for the configured light.
+
+    :return: Dictionary of properties for given light.
+    """
     response = requests.get(f"https://api.lifx.com/v1/lights/id:{id}", headers=headers)
     if response.ok:
         return json.loads(response.content)[0]
