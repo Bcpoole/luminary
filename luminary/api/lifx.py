@@ -1,8 +1,9 @@
-import configparser
 import json
 import time
 
 import requests
+
+from luminary.util import project
 
 
 class HSBK:
@@ -154,8 +155,7 @@ def get_status():
         raise requests.exceptions.HTTPError(response.status_code, response.reason, response.content)
 
 
-config = configparser.ConfigParser()
-config.read('../config/lifx.ini')
+config = project.load_config('lifx.ini')
 headers = {
     "Authorization": f"Bearer {config['DEFAULT']['api_key']}",
 }
