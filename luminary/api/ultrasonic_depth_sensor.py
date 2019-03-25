@@ -29,7 +29,7 @@ def detect():
 
     distance = pulse_duration * 17150  # Multiply pulse duration by 17150 to get distance
 
-    return distance < 4
+    return distance < 6
 
 
 config = project.load_config('raspberry-pi.ini')
