@@ -14,7 +14,13 @@ class HSBK:
         :param color: Either color name string of dict of HSBK values.
         :param brightness: Color brightness. Will set to 1.0 if None and color has no brightness value.
         """
-        if type(color) is str:
+        if type(color) is HSBK:
+            self.hue = color.hue
+            self.saturation = color.saturation
+            self.brightness = color.brightness
+            self.kelvin = color.kelvin
+            return
+        elif type(color) is str:
             response = requests.get(f"https://api.lifx.com/v1/color?string={color}", headers=headers)
             color = json.loads(response.content)
 

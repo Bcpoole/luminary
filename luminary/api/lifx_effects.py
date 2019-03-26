@@ -23,7 +23,7 @@ def breathe(color, from_color=None, period=1.0, cycles=1.0, persist=False, power
     :param peak: Defines where in a period the target color is at its maximum. Minimum 0.0, maximum 1.0.
     """
     payload = {
-        "color": HSBK.encode(HSBK(color)),
+        "color": HSBK(color).encode(),
         "period": period,
         "cycles": cycles,
         "persist": persist,
@@ -31,7 +31,7 @@ def breathe(color, from_color=None, period=1.0, cycles=1.0, persist=False, power
         "peak": peak,
     }
     if from_color is not None:
-        payload['from_color'] = HSBK.encode(HSBK(from_color))
+        payload['from_color'] = HSBK(from_color).encode()
 
     post_effect("breathe", payload)
 
@@ -132,14 +132,14 @@ def pulse(color, from_color=None, period=1.0, cycles=1.0, persist=False, power_o
     :param power_on: If true, turn the bulb on if it is not already on.
     """
     payload = {
-        "color": HSBK.encode(HSBK(color)),
+        "color": HSBK(color).encode(),
         "period": period,
         "cycles": cycles,
         "persist": persist,
         "power_on": power_on,
     }
     if from_color is not None:
-        payload['from_color'] = HSBK.encode(HSBK(from_color))
+        payload['from_color'] = HSBK(from_color).encode()
 
     post_effect("pulse", payload)
 

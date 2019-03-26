@@ -65,16 +65,20 @@ def encode_forecast(forecast=None):
             return keys in simple_forecast
 
     weather = {
-        'rain_chance': 0,
+        'precipitation_chance': 0,
         'temperature': get_temperature(forecast),
         'thunderstorms': False,
+        'snow': False,
         'cloud_level': 0,  # Sunny
     }
 
-    if simple_forecast_contains(['rain', 'tsra']):
-        weather['rain_chance'] = max(map(lambda x: int(x.split(',')[1]), filter(lambda y: ',' in y, simple_forecast)))
+    if simple_forecast_contains(['rain', 'tsra', 'snow']):
+        weather['precipitation_chance'] = max(map(lambda x: int(x.split(',')[1]), filter(lambda y: ',' in y, simple_forecast)))
     if simple_forecast_contains('tsra'):
         weather['thunderstorms'] = True
+    if simple_forecast_contains('snow'):
+        weather['snow'] = True
+
     if short_forecast != 'sunny':
         if short_forecast == 'mostly sunny':
             weather['cloud_level'] = 1
