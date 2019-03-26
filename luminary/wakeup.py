@@ -14,7 +14,7 @@ def wakeup():
 
 
 def report_weather():
-    pass
+    weather_report = weather.encode_forecast()
 
 
 if __name__ == '__main__':
