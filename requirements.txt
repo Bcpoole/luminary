@@ -1,2 +1,2 @@
 requests>=2.21.0
-RPi.GPIO>=0.6.5
+RPi.GPIO>=0.6.5; platform_system == "Linux"
